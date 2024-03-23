@@ -98,10 +98,11 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
 
     final question = _questions[_currentQuestionIndex];
     final answers = List<String>.from(question['answers'].values);
+    final correctAnswerKey = question['correctAnswer'];
     final correctAnswerIndex =
-        question['answers'].keys.toList().indexOf(question['correctAnswer']);
+        question['answers'].keys.toList().indexOf(correctAnswerKey);
 
-    Fluttertoast.cancel(); // Close any existing toast
+    Fluttertoast.cancel();
 
     if (selectedAnswerIndex != -1 &&
         selectedAnswerIndex == correctAnswerIndex) {
@@ -121,14 +122,15 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
         backgroundColor: Colors.white,
         textColor: Colors.red,
       );
-      if (correctAnswerIndex != -1) {
-        Fluttertoast.showToast(
-          msg: "Correct Answer: ${answers[correctAnswerIndex]}",
-          toastLength: Toast.LENGTH_SHORT,
-          backgroundColor: Colors.white,
-          textColor: Colors.green,
-        );
-      }
+      final correctAnswer = correctAnswerIndex != -1
+          ? answers[correctAnswerIndex]
+          : "Answer not found";
+      Fluttertoast.showToast(
+        msg: "Correct Answer: $correctAnswer",
+        toastLength: Toast.LENGTH_SHORT,
+        backgroundColor: Colors.white,
+        textColor: Colors.green,
+      );
     }
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -212,8 +214,9 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
           children: [
             _buildScoreWidget(), // Current score widget
             Card(
+              shadowColor: Colors.grey,
               color: Colors.white,
-              elevation: 4,
+              elevation: 1,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -224,10 +227,12 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
                       style: const TextStyle(fontSize: 18),
                     ),
                     if (question['questionImageUrl'] != null)
-                      Image.network(
-                        question['questionImageUrl'],
-                        height: 200,
-                        fit: BoxFit.cover,
+                      Center(
+                        child: Image.network(
+                          question['questionImageUrl'],
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     const SizedBox(height: 16),
                     Text(
@@ -243,14 +248,23 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: List.generate(
                 answers.length,
-                (index) => ElevatedButton(
-                  onPressed: _isAnswering
-                      ? () {
-                          _answerQuestion(index);
-                        }
-                      : null,
-                  child: Text(answers[index]),
-                ),
+                (index) {
+                  String optionKey = String.fromCharCode(
+                      65 + index); // Convert index to alphabet
+                  return ElevatedButton(
+                    onPressed: _isAnswering
+                        ? () {
+                            _answerQuestion(index);
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue,
+                    ),
+                    child: Text(
+                        '$optionKey : ${answers[index]}'), // Show option key with answer
+                  );
+                },
               ),
             ),
           ],
