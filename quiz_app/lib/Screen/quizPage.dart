@@ -190,12 +190,16 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
 
     final question = _questions[_currentQuestionIndex];
     final answers = List<String>.from(question['answers'].values);
-    answers.shuffle(); // Shuffle answers randomly
+    //answers.shuffle(); // Shuffle answers randomly
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+          'Question ${_currentQuestionIndex + 1}',
+          style: const TextStyle(
+            // fontSize: 20,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         centerTitle: true,
         bottom: PreferredSize(
@@ -231,7 +235,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
                         child: Image.network(
                           question['questionImageUrl'],
                           height: 200,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.fill,
                         ),
                       ),
                     const SizedBox(height: 16),
