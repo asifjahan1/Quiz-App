@@ -235,7 +235,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Question ${_currentQuestionIndex + 1}',
+          'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
           style: const TextStyle(
             // fontSize: 20,
             fontWeight: FontWeight.w500,
@@ -263,9 +263,9 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
           children: [
             _buildScoreWidget(), // Current score widget
             Card(
-              shadowColor: Colors.white.withOpacity(0.3),
+              shadowColor: Colors.grey,
               color: Colors.white,
-              elevation: 1,
+              elevation: 0,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -273,7 +273,10 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
                   children: [
                     Text(
                       question['question'],
-                      style: const TextStyle(fontSize: 18),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.black87,
+                      ),
                     ),
                     if (question['questionImageUrl'] != null)
                       Center(
@@ -286,7 +289,8 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
                     const SizedBox(height: 16),
                     Text(
                       'Score: ${question['score']}',
-                      style: const TextStyle(fontSize: 16),
+                      style:
+                          const TextStyle(fontSize: 16, color: Colors.black54),
                     ),
                   ],
                 ),
@@ -360,7 +364,11 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Text(
         'Current Score: $_score',
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.deepOrangeAccent,
+        ),
         textAlign: TextAlign.center,
       ),
     );
