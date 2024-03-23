@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:quiz_app/Screen/mainMenu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class QuestionAnswerPage extends StatefulWidget {
@@ -28,6 +27,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
   double _progressValue = 1.0;
   late Animation<Color?> _progressColorAnimation;
   late AnimationController _progressColorController;
+  int? _currentAnswerIndex; // Track selected answer index
 
   @override
   void initState() {
@@ -123,31 +123,25 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
     final correctAnswerIndex =
         question['answers'].keys.toList().indexOf(correctAnswerKey);
 
-    Fluttertoast.cancel();
+    final bool isCorrectAnswer =
+        selectedAnswerIndex != -1 && selectedAnswerIndex == correctAnswerIndex;
 
-    if (selectedAnswerIndex != -1 &&
-        selectedAnswerIndex == correctAnswerIndex) {
+    if (isCorrectAnswer) {
       Fluttertoast.showToast(
         msg: "Correct Answer!",
         toastLength: Toast.LENGTH_SHORT,
         backgroundColor: Colors.green.withOpacity(0.8),
       );
+
       setState(() {
         _score += question['score'] as int;
       });
     } else {
       Fluttertoast.showToast(
-        msg: "Incorrect Answer!",
-        toastLength: Toast.LENGTH_SHORT,
+        msg:
+            "Incorrect Answer!\nCorrect Answer: ${answers[correctAnswerIndex]}",
+        toastLength: Toast.LENGTH_LONG,
         backgroundColor: Colors.red.withOpacity(0.8),
-      );
-      final correctAnswer = correctAnswerIndex != -1
-          ? answers[correctAnswerIndex]
-          : "Answer not found";
-      Fluttertoast.showToast(
-        msg: "Correct Answer: $correctAnswer",
-        toastLength: Toast.LENGTH_SHORT,
-        backgroundColor: Colors.green.withOpacity(0.8),
       );
     }
 
@@ -260,12 +254,6 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
               );
             },
           ),
-
-          // child: LinearProgressIndicator(
-          //   value: _progressValue,
-          //   backgroundColor: Colors.grey[300],
-          //   valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-          // ),
         ),
       ),
       body: Padding(
@@ -315,15 +303,48 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage>
                   return ElevatedButton(
                     onPressed: _isAnswering
                         ? () {
+                            setState(() {
+                              _currentAnswerIndex = index;
+                            });
                             _answerQuestion(index);
                           }
                         : null,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.blue,
+                    style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStateProperty.resolveWith<Color?>(
+                        (Set<MaterialState> states) {
+                          // Check if the button is disabled or not
+                          if (!states.contains(MaterialState.disabled)) {
+                            // If the button is enabled, return blue color
+                            return Colors.blue;
+                          } else {
+                            // If the button is disabled, check if the answer is correct
+                            if (index ==
+                                    _questions[_currentQuestionIndex]['answers']
+                                        .keys
+                                        .toList()
+                                        .indexOf(
+                                            _questions[_currentQuestionIndex]
+                                                ['correctAnswer']) &&
+                                !_isAnswering) {
+                              // If the answer is correct and answering is completed, return green color
+                              return Colors.green;
+                            } else if (index == _currentAnswerIndex) {
+                              // If the answer is incorrect and the button is selected, return red color
+                              return Colors.red;
+                            } else {
+                              // If the answer is incorrect or answering is in progress, return blue color
+                              return Colors.blue;
+                            }
+                          }
+                        },
+                      ),
+                      foregroundColor:
+                          MaterialStateProperty.all<Color>(Colors.white),
                     ),
                     child: Text(
-                        '$optionKey : ${answers[index]}'), // Show option key with answer
+                      '$optionKey : ${answers[index]}',
+                    ),
                   );
                 },
               ),

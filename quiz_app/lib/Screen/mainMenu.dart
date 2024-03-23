@@ -57,11 +57,11 @@ class _MainMenuPageState extends State<MainMenuPage> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Current High Score: $_highScore',
+              'High Score: $_highScore',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.green,
+                color: Colors.purple,
               ),
             ),
           ],
