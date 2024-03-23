@@ -214,7 +214,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
           children: [
             _buildScoreWidget(), // Current score widget
             Card(
-              shadowColor: Colors.grey,
+              shadowColor: Colors.white.withOpacity(0.3),
               color: Colors.white,
               elevation: 1,
               child: Padding(
