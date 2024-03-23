@@ -3,7 +3,7 @@ import 'package:quiz_app/Screen/quizPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainMenuPage extends StatefulWidget {
-  const MainMenuPage({Key? key}) : super(key: key);
+  const MainMenuPage({super.key});
 
   @override
   _MainMenuPageState createState() => _MainMenuPageState();

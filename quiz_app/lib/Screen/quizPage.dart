@@ -6,17 +6,18 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:quiz_app/Screen/mainMenu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class QuestionAnswerPage extends StatefulWidget {
-  const QuestionAnswerPage({super.key});
+  const QuestionAnswerPage({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _QuestionAnswerPageState createState() => _QuestionAnswerPageState();
 }
 
-class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
+class _QuestionAnswerPageState extends State<QuestionAnswerPage>
+    with SingleTickerProviderStateMixin {
   late SharedPreferences _prefs;
   List<Map<String, dynamic>> _questions = [];
   int _currentQuestionIndex = 0;
@@ -25,10 +26,20 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
   late int _highScore;
   Timer? _timer;
   double _progressValue = 1.0;
+  late Animation<Color?> _progressColorAnimation;
+  late AnimationController _progressColorController;
 
   @override
   void initState() {
     super.initState();
+    _progressColorController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _progressColorAnimation = ColorTween(
+      begin: Colors.grey[300],
+      end: Colors.green,
+    ).animate(_progressColorController);
     _fetchQuestions();
     _loadHighScore();
     _startTimer();
@@ -37,6 +48,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _progressColorController.dispose();
     super.dispose();
   }
 
@@ -46,14 +58,22 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
         Uri.parse('https://herosapp.nyc3.digitaloceanspaces.com/quiz.json'),
       );
       if (response.statusCode == 200) {
-        setState(() {
-          _questions = List<Map<String, dynamic>>.from(
-            json.decode(response.body)['questions'],
-          );
-          _questions.shuffle(); // Shuffle questions randomly
-        });
+        final List<Map<String, dynamic>> allQuestions =
+            List<Map<String, dynamic>>.from(
+          json.decode(response.body)['questions'],
+        );
+
+        // Filter out the undesired part of the JSON data
+        _questions = allQuestions
+            .where((question) =>
+                question['question'] !=
+                "Was ist <u>keine</u> Leitlinie von CHECK24?")
+            .toList();
+
+        _questions.shuffle(); // Shuffle questions randomly
       } else {
-        throw Exception('Failed to load questions');
+        throw Exception(
+            'Failed to load questions'); // Throw an exception for failed HTTP request
       }
     } catch (e) {
       if (kDebugMode) {
@@ -85,6 +105,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
         _answerQuestion(-1); // Timeout
       }
     });
+    _progressColorController.forward(from: 0.0);
   }
 
   void _answerQuestion(int selectedAnswerIndex) {
@@ -109,8 +130,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
       Fluttertoast.showToast(
         msg: "Correct Answer!",
         toastLength: Toast.LENGTH_SHORT,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
+        backgroundColor: Colors.green.withOpacity(0.8),
       );
       setState(() {
         _score += question['score'] as int;
@@ -119,8 +139,7 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
       Fluttertoast.showToast(
         msg: "Incorrect Answer!",
         toastLength: Toast.LENGTH_SHORT,
-        backgroundColor: Colors.white,
-        textColor: Colors.red,
+        backgroundColor: Colors.red.withOpacity(0.8),
       );
       final correctAnswer = correctAnswerIndex != -1
           ? answers[correctAnswerIndex]
@@ -128,24 +147,48 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
       Fluttertoast.showToast(
         msg: "Correct Answer: $correctAnswer",
         toastLength: Toast.LENGTH_SHORT,
-        backgroundColor: Colors.white,
-        textColor: Colors.green,
+        backgroundColor: Colors.green.withOpacity(0.8),
       );
     }
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (_currentQuestionIndex < _questions.length - 1) {
-        setState(() {
-          _currentQuestionIndex++;
-          _isAnswering = true;
-          _progressValue = 1.0; // Reset progress
-          _startTimer(); // Start timer for next question
-        });
-      } else {
-        // Quiz completed
-        _showEndOfGameDialog();
-      }
-    });
+    // Transition to next question after a delay
+    _transitionToNextQuestion();
+  }
+
+  Future<void> _transitionToNextQuestion() async {
+    // Show loading animation for 2 seconds
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        content: Center(
+          child: LoadingAnimationWidget.staggeredDotsWave(
+            color: Colors.lightBlue,
+            size: 100,
+          ),
+        ),
+      ),
+    );
+
+    // Wait for 2 seconds
+    await Future.delayed(const Duration(seconds: 2));
+
+    // ignore: use_build_context_synchronously
+    Navigator.pop(context);
+
+    // Transition to the next question
+    if (_currentQuestionIndex < _questions.length - 1) {
+      setState(() {
+        _currentQuestionIndex++;
+        _isAnswering = true;
+        _progressValue = 1.0; // Reset progress
+        _startTimer(); // Start timer for next question
+      });
+    } else {
+      // Quiz completed
+      _showEndOfGameDialog();
+    }
   }
 
   void _showEndOfGameDialog() {
@@ -157,8 +200,11 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close dialog
-              // Navigate back to main menu or perform any other action
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/',
+                ModalRoute.withName('/main_menu'),
+              );
             },
             child: const Text('Return to Main Menu'),
           ),
@@ -181,8 +227,8 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
       return Scaffold(
         body: Center(
           child: LoadingAnimationWidget.staggeredDotsWave(
-            color: Colors.white,
-            size: 200,
+            color: Colors.green,
+            size: 100,
           ),
         ),
       );
@@ -204,11 +250,22 @@ class _QuestionAnswerPageState extends State<QuestionAnswerPage> {
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(10),
-          child: LinearProgressIndicator(
-            value: _progressValue,
-            backgroundColor: Colors.grey[300],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+          child: AnimatedBuilder(
+            animation: _progressColorAnimation,
+            builder: (context, child) {
+              return LinearProgressIndicator(
+                value: _progressValue,
+                backgroundColor: Colors.grey[300],
+                valueColor: _progressColorAnimation,
+              );
+            },
           ),
+
+          // child: LinearProgressIndicator(
+          //   value: _progressValue,
+          //   backgroundColor: Colors.grey[300],
+          //   valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+          // ),
         ),
       ),
       body: Padding(
